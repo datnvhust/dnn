@@ -4,6 +4,7 @@ from joblib import Parallel, delayed, cpu_count
 from math import ceil
 import numpy as np
 import os
+from datasets import DATASET
 
 
 def oversample(samples):
@@ -119,7 +120,7 @@ def dnn_model_kfold(k=10):
     Keyword Arguments:
         k {integer} -- the number of folds (default: {10})
     """
-    samples = csv2dict("../data/features2.csv")
+    samples = csv2dict(DATASET.features)
 
     # These collections are speed up the process while calculating top-k accuracy
     sample_dict, bug_reports, br2files_dict = helper_collections(samples)

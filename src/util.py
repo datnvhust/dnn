@@ -17,6 +17,7 @@ from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
+from datasets import DATASET
 
 
 def git_clone(repo_url, clone_folder):
@@ -47,13 +48,16 @@ def tsv2dict(tsv_path):
     reader = csv.DictReader(open(tsv_path, "r"), delimiter="\t")
     dict_list = []
     for line in reader:
-        line["files"] = [
-            # os.path.normpath(f[8:])
-            os.path.normpath(f)
-            for f in line["files"].strip().split()
-            # if f.startswith("bundles/") and f.endswith(".java")
-            if f.endswith(".java")
-        ]
+        temp = line["files"].strip().split(".java ")
+        length = len(temp)
+        x = []
+        for i, f in enumerate(temp):
+            if i == (length - 1):
+                x.append(f)
+                continue
+            x.append(f + ".java")
+        # print(x)
+        line["files"] = x
         line["raw_text"] = line["summary"] + line["description"]
         # line["summary"] = clean_and_split(line["summary"][11:])
         # line["description"] = clean_and_split(line["description"])
@@ -179,12 +183,17 @@ def get_all_source_code(start_dir):
         # print(file_names)
         for filename in [f for f in file_names if f.endswith(".java")]:
             src_name = os.path.join(dir_, filename)
-            with open(src_name, "r") as src_file:
-                src = src_file.read()
+            # print(src_name)
+            try:
+                with open(src_name, "r") as src_file:
+                    # print(src_name)
+                    src = src_file.read()
 
-            file_key = src_name.split(start_dir)[1]
-            file_key = file_key[len(os.sep) :]
-            files[file_key] = src
+                file_key = src_name.split(start_dir)[1]
+                file_key = file_key[len(os.sep) :]
+                files[file_key] = src
+            except:
+                pass
 
     return files
 
@@ -310,7 +319,7 @@ def helper_collections(samples, only_rvsm=False):
 
         sample_dict[s["report_id"]].append(temp_dict)
 
-    bug_reports = tsv2dict("../data/AspectJ.txt")
+    bug_reports = tsv2dict(DATASET.bug_repo)
     br2files_dict = {}
 
     for bug_report in bug_reports:
