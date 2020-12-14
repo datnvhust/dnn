@@ -48,9 +48,11 @@ def tsv2dict(tsv_path):
     dict_list = []
     for line in reader:
         line["files"] = [
-            os.path.normpath(f[8:])
+            # os.path.normpath(f[8:])
+            os.path.normpath(f)
             for f in line["files"].strip().split()
-            if f.startswith("bundles/") and f.endswith(".java")
+            # if f.startswith("bundles/") and f.endswith(".java")
+            if f.endswith(".java")
         ]
         line["raw_text"] = line["summary"] + line["description"]
         # line["summary"] = clean_and_split(line["summary"][11:])
@@ -174,6 +176,7 @@ def get_all_source_code(start_dir):
     files = {}
     start_dir = os.path.normpath(start_dir)
     for dir_, dir_names, file_names in os.walk(start_dir):
+        # print(file_names)
         for filename in [f for f in file_names if f.endswith(".java")]:
             src_name = os.path.join(dir_, filename)
             with open(src_name, "r") as src_file:
@@ -307,7 +310,7 @@ def helper_collections(samples, only_rvsm=False):
 
         sample_dict[s["report_id"]].append(temp_dict)
 
-    bug_reports = tsv2dict("../data/Eclipse_Platform_UI.txt")
+    bug_reports = tsv2dict("../data/AspectJ.txt")
     br2files_dict = {}
 
     for bug_report in bug_reports:
@@ -329,6 +332,10 @@ def topk_accuarcy(test_bug_reports, sample_dict, br2files_dict, clf=None):
     """
     topk_counters = [0] * 20
     negative_total = 0
+    mrr = []
+    mean_avgp = []
+    # print(len(test_bug_reports))
+    # print(len(sample_dict))
     for bug_report in test_bug_reports:
         dnn_input = []
         corresponding_files = []
@@ -351,16 +358,43 @@ def topk_accuarcy(test_bug_reports, sample_dict, br2files_dict, clf=None):
             relevancy_list = clf.predict(dnn_input)
         else:  # rvsm
             relevancy_list = np.array(dnn_input).ravel()
+        # print(relevancy_list)
+        # print(br2files_dict[bug_id])
+        # print(corresponding_files)
+        # print(relevancy_list)
+        x = list(np.argsort(relevancy_list))
+        x.reverse()
+        # print(x)
+
+        temp = []
+        # print(br2files_dict[bug_id])
+        for y in x:
+            temp.append(corresponding_files[y])
+        relevant_ranks = sorted(temp.index(fixed) + 1
+                                for fixed in br2files_dict[bug_id] if fixed in temp)
+        if (len(relevant_ranks) == 0):
+            continue
+        # MRR
+        # print(relevant_ranks)
+        min_rank = relevant_ranks[0]
+        mrr.append(1 / min_rank)
+        
+        # MAP
+        mean_avgp.append(np.mean([len(relevant_ranks[:j + 1]) / rank
+                                   for j, rank in enumerate(relevant_ranks)]))
 
         # Top-1, top-2 ... top-20 accuracy
         for i in range(1, 21):
             max_indices = np.argpartition(relevancy_list, -i)[-i:]
+            # print(max_indices)
             for corresponding_file in np.array(corresponding_files)[max_indices]:
                 if str(corresponding_file) in br2files_dict[bug_id]:
                     topk_counters[i - 1] += 1
                     break
-
     acc_dict = {}
+    print(negative_total)
+    print("MRR", np.mean(mrr))
+    print("MAP", np.mean(mean_avgp))
     for i, counter in enumerate(topk_counters):
         acc = counter / (len(test_bug_reports) - negative_total)
         acc_dict[i + 1] = round(acc, 3)

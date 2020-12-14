@@ -5,8 +5,8 @@ import numpy as np
 
 
 def rsvm_model():
-    samples = csv2dict("../data/features.csv")
-    rvsm_list = [float(sample["rVSM_similarity"]) for sample in samples]
+    samples = csv2dict("../data/features2.csv")
+    # rvsm_list = [float(sample["rVSM_similarity"]) for sample in samples]
 
     # These collections are speed up the process while calculating top-k accuracy
     sample_dict, bug_reports, br2files_dict = helper_collections(samples, True)

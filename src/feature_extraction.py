@@ -22,17 +22,14 @@ def extract(i, br, bug_reports, java_src_dict):
         java_src_dict {dictionary} -- A dictionary of java source codes
     """
     print("Bug report : {} / {}".format(i + 1, len(bug_reports)), end="\r")
-
     br_id = br["id"]
     br_date = br["report_time"]
     br_files = br["files"]
     br_raw_text = br["raw_text"]
-
     features = []
-
     for java_file in br_files:
         java_file = os.path.normpath(java_file)
-
+        # print(java_file)
         try:
             # Source code of the java file
             src = java_src_dict[java_file]
@@ -73,27 +70,35 @@ def extract_features():
     """
     # Clone git repo to a local folder
     git_clone(
-        repo_url="https://github.com/eclipse/eclipse.platform.ui.git",
+        # repo_url="https://github.com/eclipse/eclipse.platform.ui.git",
+        repo_url="https://github.com/eclipse/org.aspectj.git",
         clone_folder="../data/",
     )
 
     # Read bug reports from tab separated file
-    bug_reports = tsv2dict("../data/Eclipse_Platform_UI.txt")
+    # bug_reports = tsv2dict("../data/Eclipse_Platform_UI.txt")
+    bug_reports = tsv2dict("../data/AspectJ.txt")
+    print("bug_reports", len(bug_reports))
 
     # Read all java source files
-    java_src_dict = get_all_source_code("../data/eclipse.platform.ui/bundles/")
-
+    # java_src_dict = get_all_source_code("../data/eclipse.platform.ui/bundles/")
+    print("start")
+    java_src_dict = get_all_source_code("../data/org.aspectj/")
+    print("java_src_dict", len(java_src_dict))
     # Use all CPUs except one to speed up extraction and avoid computer lagging
     batches = Parallel(n_jobs=cpu_count() - 1)(
         delayed(extract)(i, br, bug_reports, java_src_dict)
         for i, br in enumerate(bug_reports)
     )
 
+    print("batches", (batches))
+
     # Flatten features
     features = [row for batch in batches for row in batch]
+    print(len(features))
 
     # Save features to a csv file
-    features_path = os.path.normpath("../data/features.csv")
+    features_path = os.path.normpath("../data/features2.csv")
     with open(features_path, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(
