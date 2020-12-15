@@ -40,7 +40,7 @@ tomcat = Dataset(
 )
 
 ### Current dataset in use. (change this name to change the dataset)
-DATASET = tomcat
+DATASET = aspectj
 
 if __name__ == '__main__':
     print(DATASET.name, DATASET.src, DATASET.bug_repo)

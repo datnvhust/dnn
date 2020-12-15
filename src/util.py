@@ -55,9 +55,18 @@ def tsv2dict(tsv_path):
             if i == (length - 1):
                 x.append(f)
                 continue
-            x.append(f + ".java")
+            x.append(os.path.normpath(f + ".java"))
         # print(x)
         line["files"] = x
+
+        # line["files"] = [
+        #     # os.path.normpath(f[8:])
+        #     os.path.normpath(f)
+        #     for f in line["files"].strip().split()
+        #     # if f.startswith("bundles/") and f.endswith(".java")
+        #     if f.endswith(".java")
+        # ]
+        # print(line["files"])
         line["raw_text"] = line["summary"] + line["description"]
         # line["summary"] = clean_and_split(line["summary"][11:])
         # line["description"] = clean_and_split(line["description"])
@@ -320,6 +329,7 @@ def helper_collections(samples, only_rvsm=False):
         sample_dict[s["report_id"]].append(temp_dict)
 
     bug_reports = tsv2dict(DATASET.bug_repo)
+    # bug_reports = tsv2dict("../data/AspectJ.txt")
     br2files_dict = {}
 
     for bug_report in bug_reports:
@@ -343,8 +353,6 @@ def topk_accuarcy(test_bug_reports, sample_dict, br2files_dict, clf=None):
     negative_total = 0
     mrr = []
     mean_avgp = []
-    # print(len(test_bug_reports))
-    # print(len(sample_dict))
     for bug_report in test_bug_reports:
         dnn_input = []
         corresponding_files = []
@@ -379,12 +387,12 @@ def topk_accuarcy(test_bug_reports, sample_dict, br2files_dict, clf=None):
         # print(br2files_dict[bug_id])
         for y in x:
             temp.append(corresponding_files[y])
+        # print(temp)
         relevant_ranks = sorted(temp.index(fixed) + 1
                                 for fixed in br2files_dict[bug_id] if fixed in temp)
         if (len(relevant_ranks) == 0):
             continue
         # MRR
-        # print(relevant_ranks)
         min_rank = relevant_ranks[0]
         mrr.append(1 / min_rank)
         
