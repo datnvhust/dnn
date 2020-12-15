@@ -53,7 +53,7 @@ def tsv2dict(tsv_path):
         x = []
         for i, f in enumerate(temp):
             if i == (length - 1):
-                x.append(f)
+                x.append(os.path.normpath(f))
                 continue
             x.append(os.path.normpath(f + ".java"))
         # print(x)
